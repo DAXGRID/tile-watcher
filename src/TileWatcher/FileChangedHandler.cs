@@ -37,13 +37,15 @@ namespace TileWatcher
                 throw new Exception($"The '{fileExtension}' for file {fileChangedEvent.FullPath} is not valid, only .geojson is valid.");
 
             var token = BasicAuthToken(_fileServerSetting.Username, _fileServerSetting.Password);
-            var fileName = Path.GetFileName(fileChangedEvent.FullPath);
+            var fileNameGeoJson = Path.GetFileName(fileChangedEvent.FullPath);
             using var webClient = new WebClient();
             webClient.Headers.Add("Authorization", $"Basic {token}");
-            webClient.BaseAddress = _fileServerSetting.Uri;
-            await webClient.DownloadFileTaskAsync(new Uri(fileChangedEvent.FullPath), $"/tmp/{fileName}");
+            await webClient.DownloadFileTaskAsync(new Uri($"{_fileServerSetting.Uri}{fileChangedEvent.FullPath}"), $"/tmp/{fileNameGeoJson}");
+
+            var fileNameVectorTiles = Path.GetFileNameWithoutExtension(fileNameGeoJson);
 
             TileProcess.RunTippecanoe("");
+            File.Move($"/tmp/{fileNameGeoJson}", $"/data/{fileNameVectorTiles}");
             TileProcess.SendReloadSignal(1);
         }
 
