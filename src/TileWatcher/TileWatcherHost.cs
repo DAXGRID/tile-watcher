@@ -6,17 +6,20 @@ using System.IO;
 
 namespace TileWatcher
 {
-    public class TileWatcherHost : IHostedService
+    internal class TileWatcherHost : IHostedService
     {
         private readonly ILogger<TileWatcherHost> _logger;
         private readonly IHostApplicationLifetime _hostApplicationLifeTime;
+        private readonly IFileNotificationConsumer _fileNotificationConsumer;
 
         public TileWatcherHost(
             ILogger<TileWatcherHost> logger,
-            IHostApplicationLifetime hostApplicationLifetime)
+            IHostApplicationLifetime hostApplicationLifetime,
+            IFileNotificationConsumer fileNotficationConsumer)
         {
             _logger = logger;
             _hostApplicationLifeTime = hostApplicationLifetime;
+            _fileNotificationConsumer = fileNotficationConsumer;
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
@@ -39,11 +42,13 @@ namespace TileWatcher
 
         private void OnStarted()
         {
+            _fileNotificationConsumer.Start();
             MarkAsReady();
         }
 
         private void OnStopped()
         {
+            _fileNotificationConsumer.Dispose();
             _logger.LogInformation("Stopped");
         }
     }

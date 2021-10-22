@@ -50,6 +50,7 @@ namespace TileWatcher.Config
             {
                 services.AddOptions();
                 services.AddHostedService<TileWatcherHost>();
+                services.AddTransient<IFileNotificationConsumer, FileNotificationConsumer>();
                 services.Configure<KafkaSetting>(s => hostContext.Configuration.GetSection("kafka").Bind(s));
             });
         }
