@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Topos.Config;
 using TileWatcher.Serialize;
+using System.Collections.Generic;
 
 namespace TileWatcher
 {
@@ -11,6 +12,7 @@ namespace TileWatcher
         private IDisposable? _consumer;
         private KafkaSetting _kafkaSetting;
         private ILogger<FileNotificationConsumer> _logger;
+        private Dictionary<string, string> _fileSha256;
 
         public FileNotificationConsumer(
             IOptions<KafkaSetting> kafkaSetting,
@@ -20,6 +22,7 @@ namespace TileWatcher
                 throw new ArgumentNullException($"{nameof(KafkaSetting)} being null is not valid.");
             _kafkaSetting = kafkaSetting.Value;
             _logger = logger;
+            _fileSha256 = new Dictionary<string, string>();
         }
 
         public void Start()
@@ -40,11 +43,24 @@ namespace TileWatcher
                         switch (message.Body)
                         {
                             case FileChangedEvent fileChangedEvent:
-                                _logger.LogInformation($"Received file changed event {fileChangedEvent.Sha256CheckSum}");
+                                if (checksumChanged(fileChangedEvent.FullPath, fileChangedEvent.Sha256CheckSum, _fileSha256))
+                                {
+                                    FileChangedHandler.Handle(fileChangedEvent);
+                                }
+                                else
+                                {
+                                    _logger.LogInformation($"Filechanged with fullpath: '{fileChangedEvent.FullPath}' has same checksum so no updates");
+                                }
                                 break;
                         }
                     }
                 }).Start();
+        }
+
+        private static bool checksumChanged(string fullPath, string sha256CheckSum, Dictionary<string, string> lastFilesSha256)
+        {
+            return !(!lastFilesSha256.ContainsKey(fullPath)
+                   || sha256CheckSum != lastFilesSha256[fullPath]);
         }
 
         public void Dispose()
