@@ -1,3 +1,3 @@
-Tile watcher
+## Tile watcher
 
-Creates vector-tiles when a `geojson` file changes.
+Creates vector-tiles when a `geojson` file changes and send refresh signal to tileserver.
