@@ -5,7 +5,7 @@ using TileWatcher.Config;
 
 namespace TileWatcher
 {
-    class program
+    internal class program
     {
         async static Task Main(string[] args)
         {

@@ -1,0 +1,75 @@
+using System;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Topos.Config;
+using TileWatcher.Serialize;
+using System.Collections.Generic;
+
+namespace TileWatcher
+{
+    internal class FileNotificationConsumer : IFileNotificationConsumer
+    {
+        private IDisposable? _consumer;
+        private KafkaSetting _kafkaSetting;
+        private ILogger<FileNotificationConsumer> _logger;
+        private Dictionary<string, string> _fileSha256;
+        private readonly IFileChangedHandler _fileChangedHandler;
+
+        public FileNotificationConsumer(
+            IOptions<KafkaSetting> kafkaSetting,
+            ILogger<FileNotificationConsumer> logger,
+            IFileChangedHandler fileChangedHandler)
+        {
+            _kafkaSetting = kafkaSetting.Value;
+            _logger = logger;
+            _fileSha256 = new Dictionary<string, string>();
+            _fileChangedHandler = fileChangedHandler;
+        }
+
+        public void Start()
+        {
+            _consumer = Configure.Consumer(_kafkaSetting.Consumer, c => c.UseKafka(_kafkaSetting.Server))
+                .Serialization(s => s.FileNotificationSerializer())
+                .Topics(t => t.Subscribe(_kafkaSetting.Topic))
+                .Logging(l => l.UseSerilog())
+                .Positions(p =>
+                {
+                    p.SetInitialPosition(StartFromPosition.Now);
+                    p.StoreInMemory();
+                })
+                .Handle(async (messages, context, token) =>
+                {
+                    _logger.LogInformation("Received message");
+                    foreach (var message in messages)
+                    {
+                        switch (message.Body)
+                        {
+                            case FileChangedEvent fileChangedEvent:
+                                if (!ChecksumEqual(fileChangedEvent.FullPath, fileChangedEvent.Sha256CheckSum, _fileSha256))
+                                {
+                                    await _fileChangedHandler.Handle(fileChangedEvent);
+                                    if (_fileSha256.ContainsKey(fileChangedEvent.FullPath))
+                                        _fileSha256[fileChangedEvent.FullPath] = fileChangedEvent.Sha256CheckSum;
+                                    else
+                                        _fileSha256.Add(fileChangedEvent.FullPath, fileChangedEvent.Sha256CheckSum);
+                                }
+                                else
+                                    _logger.LogInformation($"Filechanged with fullpath: '{fileChangedEvent.FullPath}' has same checksum so no updates");
+                                break;
+                        }
+                    }
+                }).Start();
+        }
+
+        private static bool ChecksumEqual(string fullPath, string sha256CheckSum, Dictionary<string, string> lastFilesSha256)
+        {
+            return lastFilesSha256.ContainsKey(fullPath) && sha256CheckSum == lastFilesSha256[fullPath];
+        }
+
+        public void Dispose()
+        {
+            if (_consumer is not null)
+                _consumer.Dispose();
+        }
+    }
+}

@@ -50,7 +50,11 @@ namespace TileWatcher.Config
             {
                 services.AddOptions();
                 services.AddHostedService<TileWatcherHost>();
+                services.AddTransient<IFileNotificationConsumer, FileNotificationConsumer>();
+                services.AddTransient<IFileChangedHandler, FileChangedHandler>();
                 services.Configure<KafkaSetting>(s => hostContext.Configuration.GetSection("kafka").Bind(s));
+                services.Configure<FileSeverSetting>(s => hostContext.Configuration.GetSection("fileserver").Bind(s));
+                services.Configure<TileProcessingSetting>(s => hostContext.Configuration.GetSection("tileprocessing").Bind(s));
             });
         }
 
