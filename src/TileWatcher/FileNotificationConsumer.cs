@@ -33,6 +33,7 @@ namespace TileWatcher
             _consumer = Configure.Consumer(_kafkaSetting.Consumer, c => c.UseKafka(_kafkaSetting.Server))
                 .Serialization(s => s.FileNotificationSerializer())
                 .Topics(t => t.Subscribe(_kafkaSetting.Topic))
+                .Logging(l => l.UseSerilog())
                 .Positions(p =>
                 {
                     p.SetInitialPosition(StartFromPosition.Now);
@@ -47,7 +48,13 @@ namespace TileWatcher
                         {
                             case FileChangedEvent fileChangedEvent:
                                 if (!ChecksumEqual(fileChangedEvent.FullPath, fileChangedEvent.Sha256CheckSum, _fileSha256))
+                                {
                                     await _fileChangedHandler.Handle(fileChangedEvent);
+                                    if (_fileSha256.ContainsKey(fileChangedEvent.FullPath))
+                                        _fileSha256[fileChangedEvent.FullPath] = fileChangedEvent.Sha256CheckSum;
+                                    else
+                                        _fileSha256.Add(fileChangedEvent.FullPath, fileChangedEvent.Sha256CheckSum);
+                                }
                                 else
                                     _logger.LogInformation($"Filechanged with fullpath: '{fileChangedEvent.FullPath}' has same checksum so no updates");
                                 break;

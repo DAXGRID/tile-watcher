@@ -13,13 +13,16 @@ namespace TileWatcher
     {
         private readonly ILogger<FileChangedHandler> _logger;
         private readonly FileSeverSetting _fileServerSetting;
+        private readonly TileProcessingSetting _tileProcessingSetting;
 
         public FileChangedHandler(
             ILogger<FileChangedHandler> logger,
-            IOptions<FileSeverSetting> fileServerSetting)
+            IOptions<FileSeverSetting> fileServerSetting,
+            IOptions<TileProcessingSetting> tileProcessingSetting)
         {
             _logger = logger;
             _fileServerSetting = fileServerSetting.Value;
+            _tileProcessingSetting = tileProcessingSetting.Value;
         }
 
         public async Task Handle(FileChangedEvent fileChangedEvent)
@@ -42,10 +45,10 @@ namespace TileWatcher
             webClient.Headers.Add("Authorization", $"Basic {token}");
             await webClient.DownloadFileTaskAsync(new Uri($"{_fileServerSetting.Uri}{fileChangedEvent.FullPath}"), $"/tmp/{fileNameGeoJson}");
 
-            var fileNameVectorTiles = Path.GetFileNameWithoutExtension(fileNameGeoJson);
+            var fileNameVectorTiles = $"{Path.GetFileNameWithoutExtension(fileNameGeoJson)}.mbtiles";
 
-            TileProcess.RunTippecanoe("");
-            File.Move($"/tmp/{fileNameGeoJson}", $"/data/{fileNameVectorTiles}");
+            TileProcess.RunTippecanoe(_tileProcessingSetting.TippeCanoeArgs);
+            File.Move($"/tmp/{fileNameVectorTiles}", $"{_tileProcessingSetting.Destination}/{fileNameVectorTiles}", true);
             TileProcess.SendReloadSignal(1);
         }
 

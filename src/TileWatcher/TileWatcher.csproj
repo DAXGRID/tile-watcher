@@ -17,6 +17,7 @@
     <PackageReference Include="Topos" Version="0.0.98" />
     <PackageReference Include="Topos.Kafka" Version="0.0.98" />
     <PackageReference Include="Topos.NewtonsoftJson" Version="0.0.98" />
+    <PackageReference Include="Topos.Serilog" Version="0.0.98" />
   </ItemGroup>
 
 </Project>
