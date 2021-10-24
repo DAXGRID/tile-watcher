@@ -27,14 +27,6 @@ namespace TileWatcher
 
         public async Task Handle(FileChangedEvent fileChangedEvent)
         {
-            // TODO clean this up make sure that the settings cannot be null or empty from the start.
-            if (string.IsNullOrWhiteSpace(_fileServerSetting.Username))
-                throw new Exception("Fileserver settings username cannot be null, empty or whitespace");
-            if (string.IsNullOrWhiteSpace(_fileServerSetting.Password))
-                throw new Exception("Fileserver settings password cannot be null, empty or whitespace");
-            if (string.IsNullOrWhiteSpace(_fileServerSetting.Uri))
-                throw new Exception("Fileserver settings uri cannot be null, empty or whitespace");
-
             var fileExtension = Path.GetExtension(fileChangedEvent.FullPath);
             if (fileExtension != ".geojson")
                 throw new Exception($"The '{fileExtension}' for file {fileChangedEvent.FullPath} is not valid, only .geojson is valid.");

@@ -20,8 +20,6 @@ namespace TileWatcher
             ILogger<FileNotificationConsumer> logger,
             IFileChangedHandler fileChangedHandler)
         {
-            if (kafkaSetting is null || kafkaSetting.Value is null)
-                throw new ArgumentNullException($"{nameof(KafkaSetting)} being null is not valid.");
             _kafkaSetting = kafkaSetting.Value;
             _logger = logger;
             _fileSha256 = new Dictionary<string, string>();
