@@ -13,12 +13,12 @@ namespace TileWatcher
     {
         private readonly ILogger<FileChangedHandler> _logger;
         private readonly FileSeverSetting _fileServerSetting;
-        private readonly TileProcessingSetting _tileProcessingSetting;
+        private readonly TileProcessSetting _tileProcessingSetting;
 
         public FileChangedHandler(
             ILogger<FileChangedHandler> logger,
             IOptions<FileSeverSetting> fileServerSetting,
-            IOptions<TileProcessingSetting> tileProcessingSetting)
+            IOptions<TileProcessSetting> tileProcessingSetting)
         {
             _logger = logger;
             _fileServerSetting = fileServerSetting.Value;
@@ -27,6 +27,9 @@ namespace TileWatcher
 
         public async Task Handle(FileChangedEvent fileChangedEvent)
         {
+            if (!_tileProcessingSetting.Process.ContainsKey(fileChangedEvent.FullPath))
+                return;
+
             var fileExtension = Path.GetExtension(fileChangedEvent.FullPath);
             if (fileExtension != ".geojson")
                 throw new Exception($"The '{fileExtension}' for file {fileChangedEvent.FullPath} is not valid, only .geojson is valid.");
@@ -39,7 +42,8 @@ namespace TileWatcher
 
             var fileNameVectorTiles = $"{Path.GetFileNameWithoutExtension(fileNameGeoJson)}.mbtiles";
 
-            TileProcess.RunTippecanoe(_tileProcessingSetting.TippeCanoeArgs);
+            _logger.LogInformation($"Running tippecanoe with args {_tileProcessingSetting.Process[fileChangedEvent.FullPath]}");
+            TileProcess.RunTippecanoe(_tileProcessingSetting.Process[fileChangedEvent.FullPath]);
             File.Move($"/tmp/{fileNameVectorTiles}", $"{_tileProcessingSetting.Destination}/{fileNameVectorTiles}", true);
             TileProcess.SendReloadSignal(1);
         }

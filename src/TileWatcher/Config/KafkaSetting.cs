@@ -1,4 +1,4 @@
-namespace TileWatcher
+namespace TileWatcher.Config
 {
     public record KafkaSetting
     {

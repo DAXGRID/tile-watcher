@@ -1,8 +1,10 @@
+using System.Collections.Generic;
+
 namespace TileWatcher.Config
 {
-    internal record TileProcessingSetting
+    internal record TileProcessSetting
     {
-        public string TippeCanoeArgs { get; init; }
+        public Dictionary<string, string> Process { get; init; }
         public string Destination { get; init; }
     }
 }

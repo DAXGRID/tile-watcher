@@ -4,14 +4,15 @@ using Microsoft.Extensions.Options;
 using Topos.Config;
 using TileWatcher.Serialize;
 using System.Collections.Generic;
+using TileWatcher.Config;
 
 namespace TileWatcher
 {
     internal class FileNotificationConsumer : IFileNotificationConsumer
     {
-        private IDisposable? _consumer;
-        private KafkaSetting _kafkaSetting;
-        private ILogger<FileNotificationConsumer> _logger;
+        private IDisposable _consumer;
+        private readonly KafkaSetting _kafkaSetting;
+        private readonly ILogger<FileNotificationConsumer> _logger;
         private Dictionary<string, string> _fileSha256;
         private readonly IFileChangedHandler _fileChangedHandler;
 
@@ -22,8 +23,8 @@ namespace TileWatcher
         {
             _kafkaSetting = kafkaSetting.Value;
             _logger = logger;
-            _fileSha256 = new Dictionary<string, string>();
             _fileChangedHandler = fileChangedHandler;
+            _fileSha256 = new Dictionary<string, string>();
         }
 
         public void Start()
@@ -39,12 +40,12 @@ namespace TileWatcher
                 })
                 .Handle(async (messages, context, token) =>
                 {
-                    _logger.LogInformation("Received message");
                     foreach (var message in messages)
                     {
                         switch (message.Body)
                         {
                             case FileChangedEvent fileChangedEvent:
+                                _logger.LogInformation($"Received message with fullpath '{fileChangedEvent.FullPath}' and checksum of '{fileChangedEvent.Sha256CheckSum}'");
                                 if (!ChecksumEqual(fileChangedEvent.FullPath, fileChangedEvent.Sha256CheckSum, _fileSha256))
                                 {
                                     await _fileChangedHandler.Handle(fileChangedEvent);
@@ -54,7 +55,9 @@ namespace TileWatcher
                                         _fileSha256.Add(fileChangedEvent.FullPath, fileChangedEvent.Sha256CheckSum);
                                 }
                                 else
-                                    _logger.LogInformation($"Filechanged with fullpath: '{fileChangedEvent.FullPath}' has same checksum so no updates");
+                                {
+                                    _logger.LogInformation($"Message with fullpath: '{fileChangedEvent.FullPath}' has the same checksum so no updates");
+                                }
                                 break;
                         }
                     }
