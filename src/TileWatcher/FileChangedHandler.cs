@@ -27,7 +27,9 @@ namespace TileWatcher
 
         public async Task Handle(FileChangedEvent fileChangedEvent)
         {
-            if (!_tileProcessingSetting.Process.ContainsKey(fileChangedEvent.FullPath))
+            // We do this because .NET options are annoying and we cannot use start slash in enviroment variable
+            var fullPathNoStartSlash = RemoveStartSlash(fileChangedEvent.FullPath);
+            if (!_tileProcessingSetting.Process.ContainsKey(fullPathNoStartSlash))
                 return;
 
             try
@@ -56,6 +58,18 @@ namespace TileWatcher
             {
                 _logger.LogError(ex.Message);
             }
+        }
+
+        private static string RemoveStartSlash(string path)
+        {
+            if (path.Length == 0)
+                return string.Empty;
+
+            return path[0] switch
+            {
+                '/' => path.Remove(0, 1),
+                _ => path
+            };
         }
 
         private static string BasicAuthToken(string username, string password)
