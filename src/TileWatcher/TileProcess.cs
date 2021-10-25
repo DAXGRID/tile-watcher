@@ -1,4 +1,7 @@
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 
 namespace TileWatcher
 {
@@ -25,12 +28,14 @@ namespace TileWatcher
 
         public static string ReloadMbTileServer()
         {
-            var pId = RetrieveProcessId("mbtileserver");
+            var pIds = RetrieveProcessIds("mbtileserver");
+            var joinedProcessIds = JoinProcessIds(pIds);
+
             var startInfo = new ProcessStartInfo();
             startInfo.CreateNoWindow = true;
             startInfo.UseShellExecute = false;
             startInfo.FileName = "kill";
-            startInfo.Arguments = $"-HUP {pId}";
+            startInfo.Arguments = $"-HUP {joinedProcessIds}";
             startInfo.RedirectStandardOutput = true;
 
             var stdout = "";
@@ -43,7 +48,7 @@ namespace TileWatcher
             return stdout;
         }
 
-        private static string RetrieveProcessId(string processName)
+        private static List<int> RetrieveProcessIds(string processName)
         {
             var startInfo = new ProcessStartInfo();
             startInfo.CreateNoWindow = true;
@@ -52,15 +57,20 @@ namespace TileWatcher
             startInfo.Arguments = processName;
             startInfo.RedirectStandardOutput = true;
 
-            var processId = "";
+            var processIds = "";
 
             using (var process = Process.Start(startInfo))
             {
-                processId = process.StandardOutput.ReadToEnd();
+                processIds = process.StandardOutput.ReadToEnd();
                 process.WaitForExit();
             }
 
-            return processId;
+            return processIds.Split(' ').Select(x => Convert.ToInt32(x)).ToList();
+        }
+
+        private static string JoinProcessIds(List<int> pIds)
+        {
+            return string.Join(" ", pIds.Select(x => $"'{x}'"));
         }
     }
 }
