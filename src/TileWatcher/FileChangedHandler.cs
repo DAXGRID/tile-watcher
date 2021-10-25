@@ -44,11 +44,11 @@ namespace TileWatcher
                 webClient.Headers.Add("Authorization", $"Basic {token}");
                 await webClient.DownloadFileTaskAsync(new Uri($"{_fileServerSetting.Uri}{fileChangedEvent.FullPath}"), $"/tmp/{fileNameGeoJson}");
 
-                var fileNameVectorTiles = $"{Path.GetFileNameWithoutExtension(fileNameGeoJson)}.mbtiles";
-
-                var stdoutTippecanoe = TileProcess.RunTippecanoe(_tileProcessingSetting.Process[fileChangedEvent.FullPath]);
+                var tippeCannoeArgs = _tileProcessingSetting.Process[fullPathNoStartSlash];
+                var stdoutTippecanoe = TileProcess.RunTippecanoe(tippeCannoeArgs);
                 _logger.LogInformation(stdoutTippecanoe);
 
+                var fileNameVectorTiles = $"{Path.GetFileNameWithoutExtension(fileNameGeoJson)}.mbtiles";
                 File.Move($"/tmp/{fileNameVectorTiles}", $"{_tileProcessingSetting.Destination}/{fileNameVectorTiles}", true);
 
                 var stdoutReload = TileProcess.ReloadMbTileServer();
