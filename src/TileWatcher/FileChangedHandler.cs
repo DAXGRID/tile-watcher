@@ -30,22 +30,32 @@ namespace TileWatcher
             if (!_tileProcessingSetting.Process.ContainsKey(fileChangedEvent.FullPath))
                 return;
 
-            var fileExtension = Path.GetExtension(fileChangedEvent.FullPath);
-            if (fileExtension != ".geojson")
-                throw new Exception($"The '{fileExtension}' for file {fileChangedEvent.FullPath} is not valid, only .geojson is valid.");
+            try
+            {
+                var fileExtension = Path.GetExtension(fileChangedEvent.FullPath);
+                if (fileExtension != ".geojson")
+                    throw new Exception($"The '{fileExtension}' for file {fileChangedEvent.FullPath} is not valid, only .geojson is valid.");
 
-            var token = BasicAuthToken(_fileServerSetting.Username, _fileServerSetting.Password);
-            var fileNameGeoJson = Path.GetFileName(fileChangedEvent.FullPath);
-            using var webClient = new WebClient();
-            webClient.Headers.Add("Authorization", $"Basic {token}");
-            await webClient.DownloadFileTaskAsync(new Uri($"{_fileServerSetting.Uri}{fileChangedEvent.FullPath}"), $"/tmp/{fileNameGeoJson}");
+                var token = BasicAuthToken(_fileServerSetting.Username, _fileServerSetting.Password);
+                var fileNameGeoJson = Path.GetFileName(fileChangedEvent.FullPath);
+                using var webClient = new WebClient();
+                webClient.Headers.Add("Authorization", $"Basic {token}");
+                await webClient.DownloadFileTaskAsync(new Uri($"{_fileServerSetting.Uri}{fileChangedEvent.FullPath}"), $"/tmp/{fileNameGeoJson}");
 
-            var fileNameVectorTiles = $"{Path.GetFileNameWithoutExtension(fileNameGeoJson)}.mbtiles";
+                var fileNameVectorTiles = $"{Path.GetFileNameWithoutExtension(fileNameGeoJson)}.mbtiles";
 
-            _logger.LogInformation($"Running tippecanoe with args {_tileProcessingSetting.Process[fileChangedEvent.FullPath]}");
-            TileProcess.RunTippecanoe(_tileProcessingSetting.Process[fileChangedEvent.FullPath]);
-            File.Move($"/tmp/{fileNameVectorTiles}", $"{_tileProcessingSetting.Destination}/{fileNameVectorTiles}", true);
-            TileProcess.SendReloadSignal(1);
+                var stdoutTippecanoe = TileProcess.RunTippecanoe(_tileProcessingSetting.Process[fileChangedEvent.FullPath]);
+                _logger.LogInformation(stdoutTippecanoe);
+
+                File.Move($"/tmp/{fileNameVectorTiles}", $"{_tileProcessingSetting.Destination}/{fileNameVectorTiles}", true);
+
+                var stdoutReload = TileProcess.ReloadMbTileServer();
+                _logger.LogInformation(stdoutReload);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+            }
         }
 
         private static string BasicAuthToken(string username, string password)
