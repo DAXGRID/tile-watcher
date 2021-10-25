@@ -25,7 +25,7 @@ namespace TileWatcher
 
         public static string ReloadMbTileServer()
         {
-            var pIds = RetrieveProcessIds("emacs");
+            var pIds = RetrieveProcessIds("mbtileserver");
 
             var startInfo = new ProcessStartInfo();
             startInfo.CreateNoWindow = true;
