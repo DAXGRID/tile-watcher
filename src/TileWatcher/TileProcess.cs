@@ -60,7 +60,7 @@ namespace TileWatcher
                 process.WaitForExit();
             }
 
-            return string.Join(' ', processIds.Split(','));
+            return processIds.Replace(',', ' ');
         }
     }
 }
