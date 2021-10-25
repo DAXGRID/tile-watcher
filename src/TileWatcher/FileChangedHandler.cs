@@ -56,7 +56,7 @@ namespace TileWatcher
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex.Message);
+                _logger.LogError(ex.Message + "\n" + ex.StackTrace);
             }
         }
 
