@@ -27,16 +27,16 @@ namespace TileWatcher
         {
             foreach (var fullPath in _tileProcessingSetting.Process.Keys)
             {
+                _logger.LogInformation($"Starting processing file '{fullPath}'");
+
+                if (!TileProcess.IsGeoJsonFile(fullPath))
+                    throw new Exception($"The {fullPath} is invalid, only supports .geojson.");
+
+                var (username, password, uri) = _fileServerSetting;
+                await TileProcess.DownloadFile(username, password, uri, $"/{fullPath}");
+
                 try
                 {
-                    _logger.LogInformation($"Starting processing file '{fullPath}'");
-
-                    if (!TileProcess.IsGeoJsonFile(fullPath))
-                        throw new Exception($"The {fullPath} is invalid, only supports .geojson.");
-
-                    var (username, password, uri) = _fileServerSetting;
-                    await TileProcess.DownloadFile(username, password, uri, $"/{fullPath}");
-
                     var tippeCannoeArgs = _tileProcessingSetting.Process[fullPath];
                     TileProcess.RunTippecanoe(tippeCannoeArgs);
 
