@@ -1,9 +1,7 @@
 using TileWatcher.Config;
-using System.Net;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
-using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 
@@ -12,17 +10,20 @@ namespace TileWatcher
     internal class FileChangedHandler : IFileChangedHandler
     {
         private readonly ILogger<FileChangedHandler> _logger;
-        private readonly FileSeverSetting _fileServerSetting;
+        private readonly FileServerSetting _fileServerSetting;
         private readonly TileProcessSetting _tileProcessingSetting;
+        private readonly IInitialTileProcss _initialTileProcess;
 
         public FileChangedHandler(
             ILogger<FileChangedHandler> logger,
-            IOptions<FileSeverSetting> fileServerSetting,
-            IOptions<TileProcessSetting> tileProcessingSetting)
+            IOptions<FileServerSetting> fileServerSetting,
+            IOptions<TileProcessSetting> tileProcessingSetting,
+            IInitialTileProcss initialTileProcess)
         {
             _logger = logger;
             _fileServerSetting = fileServerSetting.Value;
             _tileProcessingSetting = tileProcessingSetting.Value;
+            _initialTileProcess = initialTileProcess;
         }
 
         public async Task Handle(FileChangedEvent fileChangedEvent)
@@ -34,25 +35,20 @@ namespace TileWatcher
 
             try
             {
-                var fileExtension = Path.GetExtension(fileChangedEvent.FullPath);
-                if (fileExtension != ".geojson")
-                    throw new Exception($"The '{fileExtension}' for file {fileChangedEvent.FullPath} is not valid, only .geojson is valid.");
+                if (!TileProcess.IsGeoJsonFile(fileChangedEvent.FullPath))
+                    throw new Exception($"The {fileChangedEvent.FullPath} is invalid, only supports .geojson.");
 
-                var token = BasicAuthToken(_fileServerSetting.Username, _fileServerSetting.Password);
-                var fileNameGeoJson = Path.GetFileName(fileChangedEvent.FullPath);
-                using var webClient = new WebClient();
-                webClient.Headers.Add("Authorization", $"Basic {token}");
-                await webClient.DownloadFileTaskAsync(new Uri($"{_fileServerSetting.Uri}{fileChangedEvent.FullPath}"), $"/tmp/{fileNameGeoJson}");
+                var (username, password, uri) = _fileServerSetting;
+                await TileProcess.DownloadFile(username, password, uri, fileChangedEvent.FullPath);
 
                 var tippeCannoeArgs = _tileProcessingSetting.Process[fullPathNoStartSlash];
-                var stdoutTippecanoe = TileProcess.RunTippecanoe(tippeCannoeArgs);
-                _logger.LogInformation(stdoutTippecanoe);
+                TileProcess.RunTippecanoe(tippeCannoeArgs);
 
-                var fileNameVectorTiles = $"{Path.GetFileNameWithoutExtension(fileNameGeoJson)}.mbtiles";
+                var fileNameVectorTiles = TileProcess.ChangeFileExtensionName(fileChangedEvent.FullPath, ".mbtiles");
                 File.Move($"/tmp/{fileNameVectorTiles}", $"{_tileProcessingSetting.Destination}/{fileNameVectorTiles}", true);
 
-                var stdoutReload = TileProcess.ReloadMbTileServer();
-                _logger.LogInformation(stdoutReload);
+                TileProcess.ReloadMbTileServer();
+                _logger.LogInformation($"Finished processing {fileChangedEvent.FullPath}");
             }
             catch (Exception ex)
             {
@@ -70,11 +66,6 @@ namespace TileWatcher
                 '/' => path.Remove(0, 1),
                 _ => path
             };
-        }
-
-        private static string BasicAuthToken(string username, string password)
-        {
-            return Convert.ToBase64String(ASCIIEncoding.ASCII.GetBytes($"{username}:{password}"));
         }
     }
 }
