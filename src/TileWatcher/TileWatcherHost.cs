@@ -11,28 +11,36 @@ namespace TileWatcher
         private readonly ILogger<TileWatcherHost> _logger;
         private readonly IHostApplicationLifetime _hostApplicationLifeTime;
         private readonly IFileNotificationConsumer _fileNotificationConsumer;
+        private readonly IInitialTileProcss _initialTileProcess;
 
         public TileWatcherHost(
             ILogger<TileWatcherHost> logger,
             IHostApplicationLifetime hostApplicationLifetime,
-            IFileNotificationConsumer fileNotficationConsumer)
+            IFileNotificationConsumer fileNotficationConsumer,
+            IInitialTileProcss initialTileProcess)
         {
             _logger = logger;
             _hostApplicationLifeTime = hostApplicationLifetime;
             _fileNotificationConsumer = fileNotficationConsumer;
+            _initialTileProcess = initialTileProcess;
         }
 
-        public Task StartAsync(CancellationToken cancellationToken)
+        public async Task StartAsync(CancellationToken cancellationToken)
         {
             _logger.LogInformation($"Starting {nameof(TileWatcherHost)}.");
+
+            _logger.LogInformation("Starting initial tile process.");
+            await _initialTileProcess.Start();
+
             _hostApplicationLifeTime.ApplicationStarted.Register(OnStarted);
             _hostApplicationLifeTime.ApplicationStopping.Register(OnStopped);
-            return Task.CompletedTask;
+
+            await Task.CompletedTask;
         }
 
-        public Task StopAsync(CancellationToken cancellationToken)
+        public async Task StopAsync(CancellationToken cancellationToken)
         {
-            return Task.CompletedTask;
+            await Task.CompletedTask;
         }
 
         private void MarkAsReady()
@@ -42,6 +50,7 @@ namespace TileWatcher
 
         private void OnStarted()
         {
+            _logger.LogInformation("Starting file notification consumer.");
             _fileNotificationConsumer.Start();
             MarkAsReady();
         }
