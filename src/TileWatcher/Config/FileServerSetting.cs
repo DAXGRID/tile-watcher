@@ -1,5 +1,3 @@
-using System;
-
 namespace TileWatcher.Config
 {
     internal record FileServerSetting
