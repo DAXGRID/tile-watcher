@@ -57,7 +57,6 @@ namespace TileWatcher
 
         private void OnStopped()
         {
-            _fileNotificationConsumer.Dispose();
             _logger.LogInformation("Stopped");
         }
     }
