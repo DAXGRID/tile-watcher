@@ -1,9 +1,9 @@
-using System;
+using System.Threading.Tasks;
 
 namespace TileWatcher
 {
-    internal interface IFileNotificationConsumer : IDisposable
+    internal interface IFileNotificationConsumer
     {
-        void Start();
+        Task Start();
     }
 }

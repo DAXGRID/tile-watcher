@@ -8,15 +8,12 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Options" Version="6.0.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+    <PackageReference Include="OpenFTTH.NotificationClient" Version="0.2.0" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="3.0.1" />
     <PackageReference Include="Serilog.Formatting.Compact" Version="1.1.0" />
     <PackageReference Include="Serilog.Settings.Configuration" Version="3.3.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="4.0.0" />
-    <PackageReference Include="Topos" Version="0.0.98" />
-    <PackageReference Include="Topos.Kafka" Version="0.0.98" />
-    <PackageReference Include="Topos.NewtonsoftJson" Version="0.0.98" />
-    <PackageReference Include="Topos.Serilog" Version="0.0.98" />
   </ItemGroup>
 
 </Project>
