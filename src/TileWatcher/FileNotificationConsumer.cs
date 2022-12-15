@@ -20,7 +20,7 @@ namespace TileWatcher
         private readonly NotificationClient _notificationClient;
 
         public FileNotificationConsumer(
-            IOptions<NotificationServerSetting> notifcationSetting,
+            IOptions<NotificationServerSetting> notificationSetting,
             ILogger<FileNotificationConsumer> logger,
             IFileChangedHandler fileChangedHandler)
         {
@@ -28,12 +28,12 @@ namespace TileWatcher
             _fileChangedHandler = fileChangedHandler;
             _fileSha256 = new Dictionary<string, string>();
 
-            var ipAddress = Dns.GetHostEntry(notifcationSetting.Value.Domain).AddressList
+            var ipAddress = Dns.GetHostEntry(notificationSetting.Value.Domain).AddressList
                 .First(x => x.AddressFamily == AddressFamily.InterNetwork);
 
             _notificationClient = new NotificationClient(
                 ipAddress,
-                notifcationSetting.Value.Port);
+                notificationSetting.Value.Port);
         }
 
         public async Task Start()
