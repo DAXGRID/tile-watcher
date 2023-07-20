@@ -16,6 +16,11 @@ namespace TileWatcher
             return Path.GetExtension(path) == ".geojson";
         }
 
+        public static bool IsMbTileFile(string path)
+        {
+            return Path.GetExtension(path) == ".mbtiles";
+        }
+
         public static string ChangeFileExtensionName(string filePath, string extension)
         {
             return $"{Path.GetFileNameWithoutExtension(filePath)}{extension}";

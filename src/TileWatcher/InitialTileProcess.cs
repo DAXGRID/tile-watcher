@@ -1,8 +1,8 @@
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using TileWatcher.Config;
 
 namespace TileWatcher
@@ -29,18 +29,33 @@ namespace TileWatcher
             {
                 _logger.LogInformation($"Starting processing file '{fullPath}'");
 
-                if (!TileProcess.IsGeoJsonFile(fullPath))
+                if (!TileProcess.IsGeoJsonFile(fullPath) && !TileProcess.IsMbTileFile(fullPath))
+                {
                     throw new Exception($"The {fullPath} is invalid, only supports .geojson.");
+                }
 
                 var (username, password, uri) = _fileServerSetting;
                 await TileProcess.DownloadFile(username, password, uri, $"/{fullPath}");
 
                 try
                 {
-                    var tippeCannoeArgs = _tileProcessingSetting.Process[fullPath];
-                    TileProcess.RunTippecanoe(tippeCannoeArgs);
+                    var fileNameVectorTiles = string.Empty;
 
-                    var fileNameVectorTiles = TileProcess.ChangeFileExtensionName(fullPath, ".mbtiles");
+                    if (TileProcess.IsGeoJsonFile(fullPath))
+                    {
+                        var tippeCannoeArgs = _tileProcessingSetting.Process[fullPath];
+                        TileProcess.RunTippecanoe(tippeCannoeArgs);
+                        fileNameVectorTiles = TileProcess.ChangeFileExtensionName(fullPath, ".mbtiles");
+                    }
+                    else if (TileProcess.IsMbTileFile(fullPath))
+                    {
+                        fileNameVectorTiles = fullPath;
+                    }
+                    else
+                    {
+                        throw new Exception($"Could not handle file extension of type: {Path.GetExtension(fullPath)}");
+                    }
+
                     File.Move($"/tmp/{fileNameVectorTiles}", $"{_tileProcessingSetting.Destination}/{fileNameVectorTiles}", true);
 
                     TileProcess.ReloadMbTileServer();
