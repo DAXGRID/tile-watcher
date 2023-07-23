@@ -1,9 +1,9 @@
-using TileWatcher.Config;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
-using System.Threading.Tasks;
 using System.IO;
+using System.Threading.Tasks;
+using TileWatcher.Config;
 
 namespace TileWatcher
 {
@@ -35,20 +35,30 @@ namespace TileWatcher
 
             try
             {
-                if (!TileProcess.IsGeoJsonFile(fileChangedEvent.FullPath))
-                    throw new Exception($"The {fileChangedEvent.FullPath} is invalid, only supports .geojson.");
+                if (!TileProcess.IsGeoJsonFile(fileChangedEvent.FullPath) && !TileProcess.IsMbTileFile(fileChangedEvent.FullPath))
+                {
+                    throw new Exception($"The {fileChangedEvent.FullPath} is invalid, only supports .geojson and .mbtiles.");
+                }
 
                 var (username, password, uri) = _fileServerSetting;
                 await TileProcess.DownloadFile(username, password, uri, fileChangedEvent.FullPath);
 
-                var tippeCannoeArgs = _tileProcessingSetting.Process[fullPathNoStartSlash];
-                TileProcess.RunTippecanoe(tippeCannoeArgs);
+                if (TileProcess.IsGeoJsonFile(fileChangedEvent.FullPath))
+                {
+                    var tippeCannoeArgs = _tileProcessingSetting.Process[fullPathNoStartSlash];
+                    TileProcess.RunTippecanoe(tippeCannoeArgs);
+                }
+                else
+                {
+                    throw new Exception(
+                        $"Could not handle file extension of type: {Path.GetExtension(fileChangedEvent.FullPath)}");
+                }
 
                 var fileNameVectorTiles = TileProcess.ChangeFileExtensionName(fileChangedEvent.FullPath, ".mbtiles");
                 File.Move($"/tmp/{fileNameVectorTiles}", $"{_tileProcessingSetting.Destination}/{fileNameVectorTiles}", true);
 
                 TileProcess.ReloadMbTileServer();
-                _logger.LogInformation($"Finished processing {fileChangedEvent.FullPath}");
+                _logger.LogInformation($"Finished processing '{fileChangedEvent.FullPath}'.");
             }
             catch (Exception ex)
             {
