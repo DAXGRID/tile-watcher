@@ -31,7 +31,7 @@ namespace TileWatcher
 
                 if (!TileProcess.IsGeoJsonFile(fullPath) && !TileProcess.IsMbTileFile(fullPath))
                 {
-                    throw new Exception($"The {fullPath} is invalid, only supports .geojson.");
+                    throw new Exception($"The {fullPath} is invalid, only supports .geojson and .mbtiles files.");
                 }
 
                 var (username, password, uri) = _fileServerSetting;
