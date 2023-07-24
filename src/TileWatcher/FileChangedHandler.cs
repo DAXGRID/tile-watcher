@@ -48,6 +48,10 @@ namespace TileWatcher
                     var tippeCannoeArgs = _tileProcessingSetting.Process[fullPathNoStartSlash];
                     TileProcess.RunTippecanoe(tippeCannoeArgs);
                 }
+                else if (TileProcess.IsMbTileFile(fileChangedEvent.FullPath))
+                {
+                    // Do nothing since the .mbtiles file has already been processed.
+                }
                 else
                 {
                     throw new Exception(
