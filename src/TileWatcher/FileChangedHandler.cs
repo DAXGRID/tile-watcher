@@ -2,7 +2,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using TileWatcher.Config;
 
@@ -59,17 +58,8 @@ namespace TileWatcher
                         $"Could not handle file extension of type: {Path.GetExtension(fileChangedEvent.FullPath)}");
                 }
 
-                // This is done to support multiple tiles being extracted
-                // or if other names has been chosen than the filename for the `.mbtiles`.
-                Directory
-                    .GetFiles("/tmp/")
-                    .Where(x => x.EndsWith(".mbtiles"))
-                    .ToList()
-                    .ForEach(fileNameFullPath =>
-                    {
-                        var fileName = Path.GetFileName(fileNameFullPath);
-                        File.Move($"/tmp/{fileName}", $"{_tileProcessingSetting.Destination}/{fileName}", true);
-                    });
+                var fileNameVectorTiles = TileProcess.ChangeFileExtensionName(fileChangedEvent.FullPath, ".mbtiles");
+                File.Move($"/tmp/{fileNameVectorTiles}", $"{_tileProcessingSetting.Destination}/{fileNameVectorTiles}", true);
 
                 TileProcess.ReloadMbTileServer();
                 _logger.LogInformation($"Finished processing '{fileChangedEvent.FullPath}'.");
