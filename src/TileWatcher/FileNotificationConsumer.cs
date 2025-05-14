@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using OpenFTTH.NotificationClient;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -66,7 +67,12 @@ namespace TileWatcher
                         }
 
                         // Send out that the tileset has been refreshed.
-                        _notificationClient.Send(new OpenFTTH.NotificationClient.Notification("TILESET_REFRESHED", Path.GetFileName(fileChangedEvent.FullPath)));
+                        _notificationClient.Send(
+                            new OpenFTTH.NotificationClient.Notification(
+                                "TilesetUpdated",
+                                JsonSerializer.Serialize(new TilesetUpdated(Path.GetFileName(fileChangedEvent.FullPath)))
+                            )
+                        );
                     }
                     else
                     {
@@ -86,5 +92,15 @@ namespace TileWatcher
         {
             return lastFilesSha256.ContainsKey(fullPath) && sha256CheckSum == lastFilesSha256[fullPath];
         }
+    }
+}
+
+public record TilesetUpdated
+{
+    public string TilesetName { get; init; }
+
+    public TilesetUpdated(string tilesetName)
+    {
+        TilesetName = tilesetName;
     }
 }
