@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -63,6 +64,9 @@ namespace TileWatcher
                         {
                             _fileSha256.Add(fileChangedEvent.FullPath, fileChangedEvent.Sha256CheckSum);
                         }
+
+                        // Send out that the tileset has been refreshed.
+                        _notificationClient.Send(new OpenFTTH.NotificationClient.Notification("TILESET_REFRESHED", Path.GetFileName(fileChangedEvent.FullPath)));
                     }
                     else
                     {
