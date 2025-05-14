@@ -70,7 +70,7 @@ namespace TileWatcher
                         _notificationClient.Send(
                             new OpenFTTH.NotificationClient.Notification(
                                 "TilesetUpdated",
-                                JsonSerializer.Serialize(new TilesetUpdated(Path.GetFileName(fileChangedEvent.FullPath)))
+                                JsonSerializer.Serialize(new TilesetUpdated(Path.GetFileNameWithoutExtension(fileChangedEvent.FullPath)))
                             )
                         );
                     }
