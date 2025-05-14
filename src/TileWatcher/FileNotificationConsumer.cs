@@ -49,14 +49,24 @@ namespace TileWatcher
                     var fileChangedEvent = JsonSerializer
                         .Deserialize<FileChangedEvent>(notification.Body);
 
-                    _logger.LogInformation(
+                    _logger.LogDebug(
                         "Received message with {FullPath} and {CheckSum}.",
                         fileChangedEvent.FullPath,
                         fileChangedEvent.Sha256CheckSum);
 
                     if (!CheckSumEqual(fileChangedEvent.FullPath, fileChangedEvent.Sha256CheckSum, _fileSha256))
                     {
-                        await _fileChangedHandler.Handle(fileChangedEvent);
+                        await _fileChangedHandler.Handle(fileChangedEvent, () =>
+                        {
+                            // Send out that the tileset has been refreshed.
+                            _notificationClient.Send(
+                                new OpenFTTH.NotificationClient.Notification(
+                                    "TilesetUpdated",
+                                    JsonSerializer.Serialize(new TilesetUpdated(Path.GetFileNameWithoutExtension(fileChangedEvent.FullPath)))
+                                )
+                            );
+                        });
+
                         if (_fileSha256.ContainsKey(fileChangedEvent.FullPath))
                         {
                             _fileSha256[fileChangedEvent.FullPath] = fileChangedEvent.Sha256CheckSum;
@@ -65,18 +75,10 @@ namespace TileWatcher
                         {
                             _fileSha256.Add(fileChangedEvent.FullPath, fileChangedEvent.Sha256CheckSum);
                         }
-
-                        // Send out that the tileset has been refreshed.
-                        _notificationClient.Send(
-                            new OpenFTTH.NotificationClient.Notification(
-                                "TilesetUpdated",
-                                JsonSerializer.Serialize(new TilesetUpdated(Path.GetFileNameWithoutExtension(fileChangedEvent.FullPath)))
-                            )
-                        );
                     }
                     else
                     {
-                        _logger.LogInformation(
+                        _logger.LogDebug(
                             "Message with {FullPath} has the same {CheckSum}, skipping file change.",
                             fileChangedEvent.FullPath,
                             fileChangedEvent.Sha256CheckSum);

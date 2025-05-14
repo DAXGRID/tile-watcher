@@ -26,7 +26,7 @@ namespace TileWatcher
             _initialTileProcess = initialTileProcess;
         }
 
-        public async Task Handle(FileChangedEvent fileChangedEvent)
+        public async Task Handle(FileChangedEvent fileChangedEvent, Action processedCallback)
         {
             // We do this because .NET options are annoying and we cannot use start slash in enviroment variable
             var fullPathNoStartSlash = RemoveStartSlash(fileChangedEvent.FullPath);
@@ -62,6 +62,7 @@ namespace TileWatcher
                 File.Move($"/tmp/{fileNameVectorTiles}", $"{_tileProcessingSetting.Destination}/{fileNameVectorTiles}", true);
 
                 TileProcess.ReloadMbTileServer();
+                processedCallback();
                 _logger.LogInformation($"Finished processing '{fileChangedEvent.FullPath}'.");
             }
             catch (Exception ex)
