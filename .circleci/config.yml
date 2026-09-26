@@ -9,7 +9,7 @@ executors:
         password: $DOCKER_ACCESSTOKEN
   docker-publisher:
     environment:
-      IMAGE_NAME: openftth/tile-watcher
+      IMAGE_NAME: daxgrid/tile-watcher
     docker:
       - image: cimg/base:current
         auth:
