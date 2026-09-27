@@ -1,4 +1,16 @@
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build-env
+FROM alpine AS tippecanoe-builder
+
+WORKDIR /tmp
+
+RUN apk add --no-cache build-base git zlib-dev sqlite-dev bash
+
+RUN git clone --depth 1 --branch 2.79.0 https://github.com/felt/tippecanoe.git tippecanoe-src
+
+RUN make -C tippecanoe-src -j"$(nproc)"
+
+RUN make -C tippecanoe-src install
+
+FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS build-env
 WORKDIR /app
 
 COPY ./*sln ./
@@ -12,26 +24,9 @@ WORKDIR /app/src/TileWatcher
 RUN dotnet publish -c Release -o out --packages ./packages
 
 # Build runtime image
-FROM mcr.microsoft.com/dotnet/runtime:10.0
+FROM mcr.microsoft.com/dotnet/runtime:10.0-alpine
 
-# Update repos and install dependencies
-RUN apt-get update \
-  && apt-get -y upgrade \
-  && apt-get -y install git build-essential libsqlite3-dev zlib1g-dev procps
-
-# Create a directory and copy in all files
-RUN mkdir -p /tmp/tippecanoe-src
-RUN git clone -b 2.77.0 https://github.com/felt/tippecanoe.git /tmp/tippecanoe-src
-WORKDIR /tmp/tippecanoe-src
-
-# Build tippecanoe
-RUN make \
-  && make install
-
-# Remove the temp directory and unneeded packages
-WORKDIR /
-RUN rm -rf /tmp/tippecanoe-src \
-  && apt-get -y remove --purge build-essential && apt-get -y autoremove
+COPY --from=tippecanoe-builder /usr/local/bin/tippecanoe /usr/local/bin/
 
 WORKDIR /app
 
