@@ -28,6 +28,8 @@ FROM mcr.microsoft.com/dotnet/runtime:10.0-alpine
 
 COPY --from=tippecanoe-builder /usr/local/bin/tippecanoe /usr/local/bin/
 
+RUN apk add --no-cache sqlite
+
 WORKDIR /app
 
 COPY --from=build-env /app/src/TileWatcher/out .
