@@ -28,7 +28,7 @@ FROM mcr.microsoft.com/dotnet/runtime:10.0-alpine
 
 COPY --from=tippecanoe-builder /usr/local/bin/tippecanoe /usr/local/bin/
 
-RUN apk add --no-cache sqlite
+RUN apk add --no-cache sqlite-libs
 
 WORKDIR /app
 
