@@ -71,7 +71,7 @@ namespace TileWatcher
             startInfo.CreateNoWindow = true;
             startInfo.UseShellExecute = false;
             startInfo.FileName = "pgrep";
-            startInfo.Arguments = $"{processName} | paste -sd, -";
+            startInfo.Arguments = $"{processName} | tr '\n' ','";
             startInfo.RedirectStandardOutput = true;
 
             var processIds = "";
