@@ -71,16 +71,17 @@ namespace TileWatcher
             startInfo.CreateNoWindow = true;
             startInfo.UseShellExecute = false;
             startInfo.FileName = "pgrep";
-            startInfo.Arguments = $"{processName} | tr '\n' ',' | sed 's/,$//'";
+            startInfo.Arguments = $"{processName}";
             startInfo.RedirectStandardOutput = true;
 
-            var processIds = "";
+            var processOutput = "";
             using (var process = Process.Start(startInfo))
             {
-                processIds = process.StandardOutput.ReadToEnd();
+                processOutput = process.StandardOutput.ReadToEnd();
                 process.WaitForExit();
             }
 
+            var processIds = string.Join(",", processOutput.Split('\n', StringSplitOptions.RemoveEmptyEntries));
             if (!processIds.Contains(','))
                 return new List<int>();
 
