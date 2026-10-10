@@ -32,5 +32,6 @@ RUN apk add --no-cache sqlite-libs
 
 WORKDIR /app
 
-COPY --from=build-env /app/src/TileWatcher/out .
+COPY --from=build-env --chown=app:app /app/src/TileWatcher/out .
+USER app
 ENTRYPOINT ["dotnet", "TileWatcher.dll"]
